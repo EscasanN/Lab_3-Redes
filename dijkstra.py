@@ -69,21 +69,3 @@ def build_routing_table(result: PathResult, me: str) -> Dict[str, Dict[str, floa
     table[me]["next_hop"] = me
     table[me]["cost"] = 0.0
     return table
-
-# ==============================
-# Cómo probar localmente (ejemplo rápido)
-# ==============================
-# En 4 terminales distintas:
-#   python run_node.py --me A
-#   python run_node.py --me B
-#   python run_node.py --me C
-#   python run_node.py --me D
-# En otra terminal, enviar un DATA de A → D:
-#   python - <<'PY'
-# from messages import make_msg
-# import socket, json
-# host, port = "127.0.0.1", 5001  # A
-# wire = make_msg("dijkstra", "data", "A", "D", 8, {"text":"hola mundo"})
-# s=socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.connect((host,port)); s.sendall(wire.encode()); s.close()
-# PY
-# Verás en consola los forwards siguiendo la ruta A→B→C→D con costos según topo.json.
