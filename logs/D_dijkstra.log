@@ -1,0 +1,27 @@
+
+----- start 2025-08-21T12:13:32 -----
+[D/START] Iniciado (dijkstra) en 127.0.0.1:5004 vecinos=['B', 'C']
+[D/ECHO] ECHO B seq=1 RTT=33.7 ms
+[D/ECHO] ECHO C seq=2 RTT=32.9 ms
+[D/RECV] DATA de A: {'kind': 'message', 'text': 'hola desde run.py'}
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/ECHO] ECHO B seq=3 RTT=27.0 ms
+[D/ECHO] ECHO C seq=4 RTT=30.3 ms
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/ECHO] ECHO B seq=5 RTT=32.0 ms
+[D/ECHO] ECHO C seq=6 RTT=17.0 ms
+[D/ECHO] ECHO B seq=7 RTT=18.1 ms
+[D/ECHO] ECHO C seq=8 RTT=16.5 ms
+[D/ECHO] ECHO B seq=9 RTT=38.9 ms
+[D/ECHO] ECHO C seq=10 RTT=16.0 ms
+[D/ECHO] ECHO B seq=11 RTT=14.2 ms
+[D/ECHO] ECHO C seq=12 RTT=15.2 ms
+----- stop 2025-08-21T12:14:02 -----

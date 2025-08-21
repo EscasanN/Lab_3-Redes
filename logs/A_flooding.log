@@ -1,0 +1,42 @@
+
+----- start 2025-08-21T12:14:06 -----
+[A/START] Iniciado (flooding) en 127.0.0.1:5001 vecinos=['B', 'C']
+[A/ECHO] ECHO C seq=1 RTT=537.4 ms
+[A/ECHO] ECHO B seq=2 RTT=47.5 ms
+[A] FWD(flooding) → C (dst=D, mid=A:1755800047650582)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800047650582)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800048735180)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800048735180)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800049000099)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800049000099)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800049275178)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800049275178)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800049538774)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800049538774)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800049803733)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800049803733)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800050069479)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800050069479)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800050321866)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800050321866)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800050596347)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800050596347)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800050848171)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800050848171)
+[A] FWD(flooding) → C (dst=D, mid=A:1755800051112957)
+[A] FWD(flooding) → B (dst=D, mid=A:1755800051112957)
+[A/ECHO] ECHO C seq=3 RTT=29.9 ms
+[A/ECHO] ECHO B seq=4 RTT=2.0 ms
+[A] FWD(flooding) → C (dst=*, mid=A:1755800052237021)
+[A] FWD(flooding) → B (dst=*, mid=A:1755800052237021)
+[A/ECHO] ECHO C seq=5 RTT=38.3 ms
+[A/ECHO] ECHO B seq=6 RTT=18.7 ms
+----- stop 2025-08-21T12:14:20 -----
+
+----- start 2025-08-21T12:14:20 -----
+[A/START] Iniciado (flooding) en 127.0.0.1:5001 vecinos=['B', 'C']
+[A/ECHO] ECHO B seq=1 RTT=27.1 ms
+[A/ECHO] ECHO C seq=2 RTT=35.1 ms
+[A/ECHO] ECHO B seq=3 RTT=21.4 ms
+[A/ECHO] ECHO C seq=4 RTT=30.1 ms
+----- stop 2025-08-21T12:14:29 -----

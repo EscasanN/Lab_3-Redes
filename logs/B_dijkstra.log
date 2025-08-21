@@ -1,0 +1,43 @@
+
+----- start 2025-08-21T12:13:32 -----
+[B/START] Iniciado (dijkstra) en 127.0.0.1:5002 vecinos=['A', 'C', 'D']
+[B/ECHO] ECHO C seq=1 RTT=32.7 ms
+[B/ECHO] ECHO A seq=2 RTT=18.0 ms
+[B/ECHO] ECHO D seq=3 RTT=17.4 ms
+[B/FWD] FWD D via C
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/ECHO] ECHO C seq=4 RTT=39.3 ms
+[B/ECHO] ECHO A seq=5 RTT=14.3 ms
+[B/ECHO] ECHO D seq=6 RTT=13.5 ms
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/ECHO] ECHO C seq=7 RTT=46.5 ms
+[B/ECHO] ECHO A seq=8 RTT=46.2 ms
+[B/ECHO] ECHO D seq=9 RTT=46.8 ms
+[B/ECHO] ECHO C seq=10 RTT=2.0 ms
+[B/ECHO] ECHO A seq=11 RTT=524.7 ms
+[B/ECHO] ECHO D seq=12 RTT=15.5 ms
+[B/ECHO] ECHO C seq=13 RTT=15.3 ms
+[B/ECHO] ECHO A seq=14 RTT=31.5 ms
+[B/ECHO] ECHO D seq=15 RTT=17.2 ms
+[B/ECHO] ECHO C seq=16 RTT=23.4 ms
+[B/ECHO] ECHO A seq=17 RTT=16.9 ms
+[B/ECHO] ECHO D seq=18 RTT=15.4 ms
+----- stop 2025-08-21T12:14:00 -----

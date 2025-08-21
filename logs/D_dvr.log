@@ -1,0 +1,84 @@
+
+----- start 2025-08-21T12:15:30 -----
+[D/START] Iniciado (dvr) en 127.0.0.1:5004 vecinos=['B', 'C']
+[D/ECHO] ECHO B seq=1 RTT=21.6 ms
+[D/ECHO] ECHO C seq=2 RTT=515.0 ms
+[D/RTE] Tabla DVR actualizada
+[D/RTE] dst=B nh=B cost=6.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=B cost=7.0
+[D/RTE] dst=B nh=B cost=6.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RECV] DATA de A: {'kind': 'message', 'text': 'hola desde run.py'}
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/ECHO] ECHO B seq=3 RTT=26.7 ms
+[D/ECHO] ECHO C seq=4 RTT=16.3 ms
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/ECHO] ECHO C seq=6 RTT=2.8 ms
+[D/ECHO] ECHO B seq=5 RTT=29.0 ms
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/ECHO] ECHO B seq=7 RTT=13.6 ms
+[D/ECHO] ECHO C seq=8 RTT=17.9 ms
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/ECHO] ECHO B seq=9 RTT=26.6 ms
+[D/ECHO] ECHO C seq=10 RTT=29.7 ms
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+[D/RTE] Tabla DVR actualizada (RX)
+[D/RTE] dst=A nh=C cost=4.0
+[D/RTE] dst=B nh=C cost=3.0
+[D/RTE] dst=C nh=C cost=1.0
+[D/RTE] dst=D nh=D cost=0.0
+----- stop 2025-08-21T12:15:54 -----

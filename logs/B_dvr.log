@@ -1,0 +1,124 @@
+
+----- start 2025-08-21T12:15:30 -----
+[B/START] Iniciado (dvr) en 127.0.0.1:5002 vecinos=['A', 'C', 'D']
+[B/ECHO] ECHO D seq=1 RTT=19.6 ms
+[B/ECHO] ECHO A seq=2 RTT=11.2 ms
+[B/ECHO] ECHO C seq=3 RTT=508.1 ms
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=D cost=6.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=D cost=6.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/ECHO] ECHO D seq=4 RTT=27.3 ms
+[B/ECHO] ECHO A seq=5 RTT=14.6 ms
+[B/ECHO] ECHO C seq=6 RTT=28.7 ms
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/FWD] FWD D via C
+[B/FWD] FWD A via A
+[B/ECHO] ECHO D seq=7 RTT=28.1 ms
+[B/ECHO] ECHO A seq=8 RTT=3.9 ms
+[B/ECHO] ECHO C seq=9 RTT=3.1 ms
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/ECHO] ECHO D seq=10 RTT=26.9 ms
+[B/ECHO] ECHO A seq=11 RTT=26.6 ms
+[B/ECHO] ECHO C seq=12 RTT=16.9 ms
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/ECHO] ECHO D seq=13 RTT=26.7 ms
+[B/ECHO] ECHO A seq=14 RTT=16.1 ms
+[B/ECHO] ECHO C seq=15 RTT=31.0 ms
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+[B/RTE] Tabla DVR actualizada (RX)
+[B/RTE] dst=A nh=A cost=1.0
+[B/RTE] dst=B nh=B cost=0.0
+[B/RTE] dst=C nh=C cost=2.0
+[B/RTE] dst=D nh=C cost=3.0
+----- stop 2025-08-21T12:15:53 -----

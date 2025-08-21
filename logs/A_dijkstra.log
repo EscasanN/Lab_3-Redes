@@ -1,0 +1,41 @@
+
+----- start 2025-08-21T12:13:32 -----
+[A/START] Iniciado (dijkstra) en 127.0.0.1:5001 vecinos=['B', 'C']
+[A/ECHO] ECHO B seq=1 RTT=17.9 ms
+[A/ECHO] ECHO C seq=2 RTT=18.0 ms
+[A/FWD] FWD D via B
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=44.0 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=106.2 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=90.1 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=76.6 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=85.7 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=108.8 ms
+[A/FWD] FWD D via B
+[A/ECHO] ECHO B seq=3 RTT=26.8 ms
+[A/ECHO] ECHO C seq=4 RTT=45.1 ms
+[A/RECV] PONG from D RTT=105.5 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=118.6 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=75.9 ms
+[A/FWD] FWD D via B
+[A/RECV] PONG from D RTT=104.5 ms
+[A/ECHO] ECHO C seq=6 RTT=16.0 ms
+[A/ECHO] ECHO B seq=5 RTT=47.6 ms
+----- stop 2025-08-21T12:13:47 -----
+
+----- start 2025-08-21T12:13:47 -----
+[A/START] Iniciado (dijkstra) en 127.0.0.1:5001 vecinos=['B', 'C']
+[A/ECHO] ECHO C seq=1 RTT=28.9 ms
+[A/ECHO] ECHO B seq=2 RTT=1.5 ms
+[A/ECHO] ECHO C seq=3 RTT=27.4 ms
+[A/ECHO] ECHO B seq=4 RTT=31.0 ms
+[A/ECHO] ECHO C seq=5 RTT=40.8 ms
+[A/ECHO] ECHO B seq=6 RTT=30.4 ms
+----- stop 2025-08-21T12:14:00 -----

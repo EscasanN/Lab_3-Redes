@@ -1,0 +1,53 @@
+
+----- start 2025-08-21T12:14:35 -----
+[D/START] Iniciado (lsr) en 127.0.0.1:5004 vecinos=['B', 'C']
+[D] FWD(flooding) → C (dst=*, mid=D:1)
+[D] FWD(flooding) → B (dst=*, mid=D:1)
+[D] FWD(flooding) → B (dst=*, mid=B:1)
+[D] FWD(flooding) → C (dst=*, mid=A:1)
+[D] FWD(flooding) → B (dst=*, mid=C:1)
+[D/ECHO] ECHO B seq=2 RTT=536.7 ms
+[D/ECHO] ECHO C seq=1 RTT=560.3 ms
+[D/RECV] DATA de A: {'kind': 'message', 'text': 'hola desde run.py'}
+[D] FWD(flooding) → C (dst=*, mid=D:2)
+[D] FWD(flooding) → B (dst=*, mid=D:2)
+[D] FWD(flooding) → B (dst=*, mid=C:2)
+[D] FWD(flooding) → B (dst=*, mid=B:2)
+[D] FWD(flooding) → C (dst=*, mid=A:2)
+[D/ECHO] ECHO C seq=3 RTT=37.6 ms
+[D/ECHO] ECHO B seq=4 RTT=31.3 ms
+[D/RECV] PONG → A via B
+[D/RECV] PONG → A via B
+[D/RECV] PONG → A via B
+[D] FWD(flooding) → C (dst=*, mid=D:3)
+[D] FWD(flooding) → B (dst=*, mid=D:3)
+[D/RECV] PONG → A via B
+[D/RECV] PONG → A via B
+[D] FWD(flooding) → B (dst=*, mid=C:3)
+[D] FWD(flooding) → C (dst=*, mid=A:3)
+[D] FWD(flooding) → B (dst=*, mid=B:3)
+[D/RECV] PONG → A via B
+[D/RECV] PONG → A via B
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/RECV] PONG → A via C
+[D/ECHO] ECHO C seq=5 RTT=26.8 ms
+[D/ECHO] ECHO B seq=6 RTT=30.4 ms
+[D] FWD(flooding) → C (dst=*, mid=D:4)
+[D] FWD(flooding) → B (dst=*, mid=D:4)
+[D] FWD(flooding) → B (dst=*, mid=B:4)
+[D] FWD(flooding) → C (dst=*, mid=A:4)
+[D] FWD(flooding) → B (dst=*, mid=C:4)
+[D/ECHO] ECHO C seq=7 RTT=17.1 ms
+[D/ECHO] ECHO B seq=8 RTT=32.5 ms
+[D] FWD(flooding) → C (dst=*, mid=D:5)
+[D] FWD(flooding) → B (dst=*, mid=D:5)
+[D] FWD(flooding) → C (dst=*, mid=B:5)
+[D] FWD(flooding) → B (dst=*, mid=C:5)
+[D] FWD(flooding) → B (dst=*, mid=B:6)
+[D/ECHO] ECHO C seq=9 RTT=24.5 ms
+[D/ECHO] ECHO B seq=10 RTT=23.5 ms
+[D] FWD(flooding) → C (dst=*, mid=D:6)
+[D] FWD(flooding) → B (dst=*, mid=D:6)
+[D] FWD(flooding) → B (dst=*, mid=C:6)
+----- stop 2025-08-21T12:14:58 -----

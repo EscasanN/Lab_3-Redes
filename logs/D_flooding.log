@@ -1,0 +1,26 @@
+
+----- start 2025-08-21T12:14:06 -----
+[D/START] Iniciado (flooding) en 127.0.0.1:5004 vecinos=['B', 'C']
+[D/ECHO] ECHO C seq=1 RTT=6.1 ms
+[D/ECHO] ECHO B seq=2 RTT=16.1 ms
+[D] DATA para mí de A: {'kind': 'message', 'text': 'hola desde run.py'}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800048.713634}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800048.985464}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800049.2506294}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800049.525698}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800049.789251}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800050.0542784}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800050.3204718}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800050.571827}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800050.8472016}
+[D] DATA para mí de A: {'kind': 'ping', 'ts': 1755800051.098719}
+[D/ECHO] ECHO C seq=3 RTT=20.9 ms
+[D/ECHO] ECHO B seq=4 RTT=20.2 ms
+[D] FWD(flooding) → B (dst=*, mid=A:1755800052237021)
+[D/ECHO] ECHO C seq=5 RTT=37.7 ms
+[D/ECHO] ECHO B seq=6 RTT=30.1 ms
+[D/ECHO] ECHO C seq=7 RTT=24.5 ms
+[D/ECHO] ECHO B seq=8 RTT=39.1 ms
+[D/ECHO] ECHO C seq=9 RTT=33.0 ms
+[D/ECHO] ECHO B seq=10 RTT=30.7 ms
+----- stop 2025-08-21T12:14:30 -----

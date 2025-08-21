@@ -1,0 +1,83 @@
+
+----- start 2025-08-21T12:14:35 -----
+[B/START] Iniciado (lsr) en 127.0.0.1:5002 vecinos=['A', 'C', 'D']
+[B] FWD(flooding) → C (dst=*, mid=B:1)
+[B] FWD(flooding) → A (dst=*, mid=B:1)
+[B] FWD(flooding) → C (dst=*, mid=A:1)
+[B] FWD(flooding) → D (dst=*, mid=B:1)[B] FWD(flooding) → D (dst=*, mid=A:1)
+
+[B/ECHO] ECHO A seq=2 RTT=514.5 ms
+[B] FWD(flooding) → C (dst=*, mid=D:1)
+[B] FWD(flooding) → A (dst=*, mid=D:1)
+[B] FWD(flooding) → A (dst=*, mid=C:1)
+[B] FWD(flooding) → D (dst=*, mid=C:1)
+[B/ECHO] ECHO C seq=1 RTT=585.4 ms
+[B/ECHO] ECHO D seq=3 RTT=575.4 ms
+[B/FWD] FWD D via D
+[B] FWD(flooding) → C (dst=*, mid=D:2)
+[B] FWD(flooding) → A (dst=*, mid=D:2)
+[B] FWD(flooding) → C (dst=*, mid=B:2)
+[B] FWD(flooding) → C (dst=*, mid=A:2)
+[B] FWD(flooding) → D (dst=*, mid=A:2)
+[B] FWD(flooding) → C (dst=*, mid=C:2)
+[B] FWD(flooding) → A (dst=*, mid=B:2)
+[B] FWD(flooding) → D (dst=*, mid=B:2)
+[B] FWD(flooding) → A (dst=*, mid=C:2)
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B/ECHO] ECHO C seq=4 RTT=29.5 ms
+[B/ECHO] ECHO D seq=6 RTT=29.4 ms
+[B/ECHO] ECHO A seq=5 RTT=31.5 ms
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B] FWD(flooding) → C (dst=*, mid=D:3)
+[B] FWD(flooding) → A (dst=*, mid=D:3)
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B] FWD(flooding) → C (dst=*, mid=A:3)
+[B] FWD(flooding) → C (dst=*, mid=B:3)
+[B] FWD(flooding) → A (dst=*, mid=B:3)
+[B] FWD(flooding) → D (dst=*, mid=A:3)[B] FWD(flooding) → D (dst=*, mid=B:3)
+
+[B] FWD(flooding) → C (dst=*, mid=C:3)
+[B] FWD(flooding) → A (dst=*, mid=C:3)
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B/FWD] FWD D via D
+[B/FWD] FWD A via A
+[B/FWD] FWD D via D
+[B/FWD] FWD D via D
+[B] FWD(flooding) → C (dst=*, mid=D:4)
+[B] FWD(flooding) → A (dst=*, mid=D:4)
+[B/ECHO] ECHO C seq=7 RTT=3.4 ms
+[B/ECHO] ECHO D seq=9 RTT=12.3 ms
+[B/ECHO] ECHO A seq=8 RTT=27.3 ms
+[B] FWD(flooding) → C (dst=*, mid=B:4)
+[B] FWD(flooding) → A (dst=*, mid=B:4)
+[B] FWD(flooding) → C (dst=*, mid=A:4)
+[B] FWD(flooding) → D (dst=*, mid=A:4)
+[B] FWD(flooding) → D (dst=*, mid=B:4)
+[B] FWD(flooding) → A (dst=*, mid=C:4)
+[B] FWD(flooding) → D (dst=*, mid=C:4)
+[B] FWD(flooding) → C (dst=*, mid=D:5)
+[B] FWD(flooding) → A (dst=*, mid=D:5)
+[B/ECHO] ECHO A seq=11 RTT=15.2 ms
+[B/ECHO] ECHO D seq=12 RTT=14.5 ms
+[B] FWD(flooding) → C (dst=*, mid=B:5)
+[B] FWD(flooding) → A (dst=*, mid=B:5)
+[B] FWD(flooding) → D (dst=*, mid=B:5)
+[B/ECHO] ECHO C seq=10 RTT=178.4 ms
+[B] FWD(flooding) → C (dst=*, mid=C:5)
+[B] FWD(flooding) → A (dst=*, mid=C:5)
+[B] FWD(flooding) → C (dst=*, mid=B:6)
+[B] FWD(flooding) → A (dst=*, mid=B:6)
+[B] FWD(flooding) → D (dst=*, mid=B:6)
+[B] FWD(flooding) → C (dst=*, mid=D:6)
+[B] FWD(flooding) → A (dst=*, mid=D:6)
+[B/ECHO] ECHO C seq=13 RTT=25.1 ms
+[B] FWD(flooding) → C (dst=*, mid=C:6)
+----- stop 2025-08-21T12:14:56 -----
