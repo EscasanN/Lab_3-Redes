@@ -4,9 +4,9 @@ from pathlib import Path
 from datetime import datetime
 
 ROOT = Path(__file__).resolve().parent
-PY = sys.executable  # usa el mismo intérprete que ejecuta run.py
+PY = sys.executable  
 RUN_NODE = str(ROOT / "run_node.py")
-SEND_CLI = str(ROOT / "send_cli.py")  # opcional (no lo usamos ya)
+SEND_CLI = str(ROOT / "send_cli.py")  
 NODES_JSON = str(ROOT / "config" / "nodes.json")
 TOPO_JSON  = str(ROOT / "config" / "topo.json")
 LOGS_DIR   = ROOT / "logs"
@@ -64,12 +64,11 @@ class NodeProc:
 
     def start(self):
         self.logfp = open(self.log_path, "a", buffering=1, encoding="utf-8")
-        # encabezado de sesión
         self.logfp.write(f"\n----- start {datetime.now().isoformat(timespec='seconds')} -----\n")
         self.logfp.flush()
 
         cmd = [
-            PY, "-u",  # unbuffered
+            PY, "-u",  
             RUN_NODE,
             "--me", self.node_id,
             "--mode", self.mode,
@@ -85,7 +84,7 @@ class NodeProc:
         creationflags = 0
         if os.name == "nt":
             try:
-                creationflags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+                creationflags = subprocess.CREATE_NEW_PROCESS_GROUP  
             except Exception:
                 creationflags = 0
 
@@ -100,7 +99,6 @@ class NodeProc:
         if not self.p: return
         try:
             if os.name == "nt":
-                # mata proceso por PID (sin matar la consola actual)
                 subprocess.run(["taskkill", "/PID", str(self.p.pid), "/T", "/F"],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             else:
@@ -202,7 +200,6 @@ def boot_all(mode: str, log_level="INFO", hello_period=5.0, dead_after=10.0) -> 
         np.start()
         procs[nid] = np
 
-    # espera a que abran puertos
     for nid in ["A","B","C","D"]:
         host, port = nodes_map[nid]
         ok = wait_port_open(host, port, timeout=10.0)

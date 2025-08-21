@@ -33,7 +33,7 @@ class DVR:
         self.changed = True
         self._triggered = False
         self._last_change_time = 0.0
-        self.hold_until: Dict[str, float] = {}  # dst -> epoch
+        self.hold_until: Dict[str, float] = {}  
 
     # ======= util =======
     def _now(self) -> float:
@@ -93,7 +93,6 @@ class DVR:
                 if via < best_cost:
                     best_cost, best_nh = via, n
 
-            # hold-down: si acaba de empeorar y luego aparece algo 'mejor' demasiado pronto, ignóralo
             prev_cost = self.dv_self.get(dst, INF)
             if self.hold_down_secs and dst in self.hold_until and now < self.hold_until[dst]:
                 if best_cost < prev_cost:  # mejora durante hold-down
@@ -102,7 +101,7 @@ class DVR:
             new_dv[dst] = best_cost
             new_nh[dst] = best_nh
 
-        # detectar cambios (y activar hold-down cuando empeora mucho)
+        # detectar cambios 
         changed = False
         all_dsts = set(new_dv.keys()) | set(self.dv_self.keys())
         for d in all_dsts:
@@ -110,7 +109,6 @@ class DVR:
             new = new_dv.get(d, INF)
             if abs(old - new) > self.change_threshold or self.next_hop.get(d) != new_nh.get(d):
                 changed = True
-                # si empeora de forma notable, inicia hold-down
                 if self.hold_down_secs and (new > old + 1.0 or (old < INF/2 and new >= INF/2)):
                     self.hold_until[d] = self._now() + float(self.hold_down_secs)
 
@@ -119,14 +117,13 @@ class DVR:
         self.changed = changed
         if changed:
             self._last_change_time = now
-            self._triggered = True  # anuncia rápido
+            self._triggered = True  
 
     # ======= anuncio =======
     def should_advertise(self, min_interval: float = 1.0, refresh_every: float = 8.0) -> bool:
         now = self._now()
         if self.seq == 0:
             return True
-        # triggered update con pequeño backoff (200ms)
         if self._triggered and (now - self.last_adv) >= 0.2:
             return True
         if (now - self.last_adv) >= min_interval and (self.changed or (now - self.last_adv) >= refresh_every):
@@ -156,14 +153,13 @@ class DVR:
             node._send(nei, wire)
         self.last_adv = self._now()
         self._triggered = False
-        self.changed = False  # tabla ya anunciada
+        self.changed = False  
 
     # ======= recepción =======
     def on_receive_info(self, node, msg: dict) -> None:
         src = msg.get("from")
         if not src:
             return
-        # Sólo aceptamos DV de vecinos (no trampa)
         if src not in node.neighbors:
             return
         payload = msg.get("payload") or {}
@@ -194,7 +190,6 @@ class DVR:
         table: Dict[str, Dict[str, float | str | None]] = {}
         for dst, cost in self.dv_self.items():
             nh = self.next_hop.get(dst)
-            # Mejor manejo de INF para la tabla
             if cost >= INF/2:
                 table[dst] = {"next_hop": None, "cost": INF}
             else:

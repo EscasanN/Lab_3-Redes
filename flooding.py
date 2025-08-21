@@ -34,7 +34,7 @@ class Flooding:
         self._set_header(msg, "mid", mid)
         return mid
 
-    # ---- núcleo de inundación (sin deduplicación aquí) ----
+    # ---- núcleo de inundación ----
     def _flood(self, node, msg: dict) -> None:
         ttl = int(msg.get("ttl", 0))
         if ttl <= 0:
@@ -48,16 +48,14 @@ class Flooding:
         self._set_header(fwd, "prev", node.node_id)
         wire = json.dumps(fwd, ensure_ascii=False)
 
-        # Evitar vecinos "caídos" (sin ECHO reciente)
         now = time.time()
-        DEAD_AFTER = 10.0  # segundos desde el último last_seen
-
+        DEAD_AFTER = 10.0  
         for n in list(node.neighbors):
             if n == prev or fwd["ttl"] <= 0:
                 continue
             met = node.nei_metrics.get(n)
             if met and met.last_seen > 0 and (now - met.last_seen) > DEAD_AFTER:
-                continue  # evita bloquearse con vecinos caídos
+                continue 
             node._send(n, wire)
             print(f"[{node.node_id}] FWD(flooding) → {n} (dst={msg.get('to')}, mid={mid})")
 

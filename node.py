@@ -44,11 +44,10 @@ class RouterNode:
         self._log_lvl = LOG_LEVELS.get(self.log_level, 2)
         self.hello_period = float(hello_period)
         self.dead_after = float(dead_after)
-
         # Flooding: se usa en modo 'flooding' y también para propagar LSP en 'lsr'
         self.flood = Flooding() if mode in {"flooding", "lsr"} else None
 
-        # Topología/vecinos (Fase 0: vecinos de archivo; LSR anunciará dinámico)
+        # Topología/vecinos 
         self.topology = topo
         self.neighbors = set(topo.get(node_id, {}).keys())
 
@@ -57,7 +56,7 @@ class RouterNode:
         self.info_in: Queue = Queue()
         self.seen = set()
         self.nei_metrics: Dict[str, NeighborMetrics] = {n: NeighborMetrics() for n in self.neighbors}
-        self._hello_out: Dict[Tuple[str, int], float] = {}  # (neighbor, seq) -> ts_sent
+        self._hello_out: Dict[Tuple[str, int], float] = {}  
         self._seq = 0
 
         # LSR
@@ -119,11 +118,9 @@ class RouterNode:
             self._log("INFO", f"ECHO {src} seq={seq} RTT={rtt_ms:.1f} ms", tag="echo")
             if self.mode == "dvr" and self.dvr:
                 self.dvr.changed = True
-                # Triggered update inmediato
                 self.dvr.trigger_update()
 
     def cost_to(self, neighbor: str) -> float:
-        """Costo actual hacia un vecino (usado por LSR/DVR)."""
         m = self.nei_metrics.get(neighbor)
         return m.rtt_ms if m and m.rtt_ms != float("inf") else 1.0
 
@@ -156,7 +153,6 @@ class RouterNode:
                 try:
                     data = conn.recv(BUFFER_SIZE)
                 except ConnectionResetError:
-                    # Ignora cierres abruptos del lado remoto (Windows suele disparar esto)
                     continue
 
                 if not data:
@@ -169,7 +165,7 @@ class RouterNode:
 
     def _handle_message(self, msg: dict):
         mtype = msg.get("type")
-        proto = msg.get("proto")   # reservado por si quieres validar
+        proto = msg.get("proto")   
         to = msg.get("to")
         ttl = int(msg.get("ttl", 0))
         src = msg.get("from")
@@ -199,7 +195,6 @@ class RouterNode:
                 return
             if self.mode == "dvr" and self.dvr:
                 self.dvr.on_receive_info(self, msg)
-                # Publica inmediatamente (evita perder el 'changed' por recompute del loop)
                 table = self.dvr.build_routing_table()
                 with self._lock:
                     self.routing_table = table
@@ -216,11 +211,9 @@ class RouterNode:
             elif self.mode in {"dijkstra", "lsr", "dvr"}:
                 payload = msg.get("payload") or {}
 
-                # Si el paquete es para mí
                 if to == self.node_id:
                     kind = payload.get("kind")
 
-                    # Respuesta a PING con PONG (para medir RTT end-to-end)
                     if kind == "ping":
                         orig_ts = float(payload.get("ts", self._now()))
                         with self._lock:
@@ -243,11 +236,9 @@ class RouterNode:
                             self._log("WARN", f"PONG from {src} (ts inválido)", tag="RECV")
                         return
 
-                    # Otros DATA para mí
                     self._log("INFO", f"DATA de {src}: {payload}", tag="RECV")
                     return
 
-                # El paquete no es para mí → forward
                 with self._lock:
                     nh = self.routing_table.get(to, {}).get("next_hop")
                 if not nh:
@@ -266,7 +257,6 @@ class RouterNode:
         while self.running:
             try:
                 if self.mode == "dijkstra":
-                    # Grafo estático desde archivo
                     res = dijkstra(self.topology, self.node_id)
                     table = build_routing_table(res, self.node_id)
                     with self._lock:
@@ -296,7 +286,6 @@ class RouterNode:
                     self.dvr.expire(self)
                     self.dvr.update_local_links(self)
 
-                    # Publicar si hubo cambios
                     if self.dvr.changed:
                         table = self.dvr.build_routing_table()
                         with self._lock:

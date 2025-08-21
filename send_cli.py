@@ -25,11 +25,6 @@ class Transport:
     # --- Fase 2: XMPP ---
     # def send_xmpp(self, entry_jid: str, wire: str):
     #     """
-    #     TODO: implementar envío por XMPP (stanza <message> con body=wire o <iq>).
-    #     Recomendado: envolver 'wire' como JSON en el body y usar un 'namespace' propio.
-    #     """
-    #     raise NotImplementedError
-
 # -------- CLI --------
 def interactive_cli(nodes_json: str, topo_json: str):
     tr = Transport(nodes_json)
@@ -56,7 +51,6 @@ def interactive_cli(nodes_json: str, topo_json: str):
             tr.send_tcp(entry, wire)
             print(f"DATA enviado via {entry} {src}->{dst}")
         elif op == "2":
-            # PING lógico (no espera PONG del nodo; sirve para testear forwarding)
             payload = {"kind": "ping", "ts": time.time()}
             wire = make_msg(mode, "data", src, dst, ttl, payload)
             t0 = time.time()
@@ -94,7 +88,6 @@ def main():
 
     args = ap.parse_args()
 
-    # Modo interactivo si no hay parámetros de envío directo
     if not any([args.text, args.ping, args.info]):
         return interactive_cli(args.nodes, args.topo)
 

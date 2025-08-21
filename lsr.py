@@ -15,12 +15,10 @@ class LSR:
     def __init__(self, me: str):
         self.me = me
         self.seq = 0
-        # LSDB: origin -> {"seq": int, "ts": float, "neighbors": Dict[str,float]}
         self.lsdb: Dict[str, Dict] = {}
         self.last_adv: Dict[str, float] = {}
         self.last_local: Dict[str, float] = {}
-        self.changed = True  # indica si hay que recalcular rutas
-
+        self.changed = True  
     def _now(self) -> float:
         return time.time()
 
@@ -37,7 +35,7 @@ class LSR:
         for n in list(node.neighbors):
             met = node.nei_metrics.get(n)
             if bootstrap:
-                snap[n] = float(node.cost_to(n))  # 1.0 si aún no hay RTT
+                snap[n] = float(node.cost_to(n))  
             else:
                 if met and met.last_seen > 0 and (now - met.last_seen) <= DEAD_AFTER:
                     snap[n] = float(node.cost_to(n))

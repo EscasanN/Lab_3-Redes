@@ -1,4 +1,3 @@
-# run_node.py (reemplaza el parser por este bloque completo)
 import argparse
 import json
 import time
@@ -11,7 +10,6 @@ if __name__ == "__main__":
     parser.add_argument("--nodes", default="config/nodes.json", help="ruta a nodes.json")
     parser.add_argument("--topo", default="config/topo.json", help="ruta a topo.json")
     parser.add_argument("--log-level", choices=["ERROR","WARN","INFO","DEBUG"], default="INFO")
-    # timers por si quieres afinarlos desde CLI (opcionales)
     parser.add_argument("--hello-period", type=float, default=5.0)
     parser.add_argument("--dead-after", type=float, default=10.0)
     args = parser.parse_args()
