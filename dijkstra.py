@@ -1,3 +1,4 @@
+# dijkstra.py
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
@@ -9,6 +10,23 @@ class PathResult:
     prev: Dict[str, Optional[str]]
     next_hop: Dict[str, Optional[str]]
 
+def _compute_next_hops(prev: Dict[str, Optional[str]], source: str) -> Dict[str, Optional[str]]:
+    """
+    Cálculo de next-hop por destino
+    """
+    nh: Dict[str, Optional[str]] = {}
+    for dst in prev:
+        if dst == source:
+            nh[dst] = source
+            continue
+        if prev[dst] is None:
+            nh[dst] = None
+            continue
+        cur, prv = dst, prev[dst]
+        while prv is not None and prv != source:
+            cur, prv = prv, prev[prv]
+        nh[dst] = cur if prv == source else None
+    return nh
 
 def dijkstra(topology: Dict[str, Dict[str, float]], source: str) -> PathResult:
     """
@@ -17,7 +35,7 @@ def dijkstra(topology: Dict[str, Dict[str, float]], source: str) -> PathResult:
     - source: nodo origen
     Retorna distancias, predecesores y next_hop desde 'source'.
     """
-    # Inicialización
+    
     dist = {v: float('inf') for v in topology}
     prev: Dict[str, Optional[str]] = {v: None for v in topology}
     dist[source] = 0.0
@@ -30,7 +48,6 @@ def dijkstra(topology: Dict[str, Dict[str, float]], source: str) -> PathResult:
         if u in visited:
             continue
         visited.add(u)
-
         for v, w in topology.get(u, {}).items():
             alt = d + w
             if alt < dist[v]:
@@ -38,34 +55,17 @@ def dijkstra(topology: Dict[str, Dict[str, float]], source: str) -> PathResult:
                 prev[v] = u
                 heapq.heappush(pq, (alt, v))
 
-    # Cálculo de next-hop por destino
-    next_hop: Dict[str, Optional[str]] = {}
-    for dest in topology:
-        if dest == source or dist[dest] == float('inf'):
-            next_hop[dest] = None if dest == source else None
-            continue
-        # retroceder desde dest hasta source para hallar el primer salto
-        cur = dest
-        while prev[cur] is not None and prev[cur] != source:
-            cur = prev[cur]
-        # si prev[cur] == source, el primer salto es 'cur'
-        if prev[cur] == source:
-            next_hop[dest] = cur
-        else:
-            # Dest es vecino directo
-            next_hop[dest] = dest if prev[dest] == source else None
-
+    next_hop = _compute_next_hops(prev, source)
     return PathResult(dist=dist, prev=prev, next_hop=next_hop)
 
-
 def build_routing_table(result: PathResult, me: str) -> Dict[str, Dict[str, float | str | None]]:
-    table = {}
+    """
+    Construcción de tabla de ruteo a partir de distancias y next_hop.
+    """
+    table: Dict[str, Dict[str, float | str | None]] = {}
     for dst, d in result.dist.items():
-        table[dst] = {
-            "next_hop": result.next_hop.get(dst),
-            "cost": d,
-        }
-    # Ajuste para self
+        table[dst] = {"next_hop": result.next_hop.get(dst), "cost": d}
+    # Ajuste self
     table[me]["next_hop"] = me
     table[me]["cost"] = 0.0
     return table
