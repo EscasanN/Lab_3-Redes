@@ -17,12 +17,13 @@ def make_msg(
 ) -> str:
     assert proto in PROTO_VALUES, f"proto inválido: {proto}"
     assert mtype in TYPE_VALUES, f"type inválido: {mtype}"
-    msg: Dict[str, Any] = {
+    msg = {
         "proto": proto,
         "type": mtype,
         "from": from_id,
         "to": to_id,
         "ttl": int(ttl),
+        "hops": 0,
         "headers": headers or [],
         "payload": payload,
     }
@@ -40,7 +41,11 @@ def set_header(msg: dict, key: str, value) -> None:
     hs.append({key: value})
     msg["headers"] = hs
 
-
-    
 def parse_msg(data: bytes) -> dict:
-    return json.loads(data.decode("utf-8"))
+    if isinstance(data, bytes):
+        return json.loads(data.decode("utf-8"))
+    if isinstance(data, str):
+        return json.loads(data)
+    if isinstance(data, dict):
+        return data
+    raise TypeError("parse_msg espera bytes/str/dict")
