@@ -1,4 +1,3 @@
-# node.py
 from __future__ import annotations
 import socket
 try:
@@ -64,6 +63,7 @@ class RouterNode:
         self._log_lvl = LOG_LEVELS.get(self.log_level, 2)
         self.hello_period = float(hello_period)
         self.dead_after = float(dead_after)
+
         # Flooding: se usa en modo 'flooding' y también para propagar LSP en 'lsr'
         self.flood = Flooding() if mode in {"flooding", "lsr"} else None
 
@@ -169,7 +169,6 @@ class RouterNode:
                 time.sleep(0.05)
         self._log("WARN", f"Error enviando a {target_node}: {last_err}")
 
-    
     # ========= Procesamiento de mensajes =========
     def _process_msg(self, msg: dict) -> None:
         try:
@@ -237,6 +236,10 @@ class RouterNode:
 
         with self._lock:
             nh = self.routing_table.get(to, {}).get("next_hop")
+        # Hotfix: si no hay ruta pero el destino es vecino directo, envía directo.
+        if not nh and to in self.neighbors:
+            nh = to
+            self._log("DEBUG", f"Sin ruta en tabla; usando vecino directo {to}", tag="FWD")
         if not nh:
             self._log("WARN", f"Sin ruta a {to} ({self.mode}).", tag="FWD")
             return
@@ -248,8 +251,7 @@ class RouterNode:
             return
         self._send(nh, wire)
         self._log("INFO", f"FWD {self.node_id} → {nh} (dst={to})", tag="FWD")
-# ========= Forwarding =========
-    
+
     # ========= Forwarding =========
     def forwarding_loop(self):
         if self.transport == "redis":
@@ -355,8 +357,6 @@ class RouterNode:
             time.sleep(self.hello_period)
 
     # ========= Ciclo de vida =========
-    
-    # ========= Ciclo de vida =========
     def start(self):
         self.running = True
         self._t_fwd = threading.Thread(target=self.forwarding_loop, daemon=True)
@@ -368,7 +368,7 @@ class RouterNode:
         addr = f"TCP {self._host}:{self._port}" if self.transport == 'tcp' else f"Redis ch={self._channel}"
         self._log("INFO", f"Iniciado ({self.mode}) {addr} vecinos={sorted(self.neighbors)}", tag="start")
 
-def stop(self):
+    def stop(self):
         self.running = False
         try:
             if self._server:
@@ -388,6 +388,3 @@ def stop(self):
             self._log("INFO", title, tag="rte")
         for dst, row in sorted(rt.items()):
             self._log("INFO", f"dst={dst} nh={row.get('next_hop')} cost={row.get('cost')}", tag="rte")
-# ========= HELLO periódico =========
-    
-    
