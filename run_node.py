@@ -12,6 +12,9 @@ def load_json(path: str):
         return json.load(f)
 
 def load_names(path: str) -> dict[str, str]:
+    def looks_like_address(s: str) -> bool:
+        return isinstance(s, str) and s.count('.') >= 2 and not s.replace('.','').isdigit()
+
     """Load Redis channels mapping: {"A": "channelA", "B": "channelB"}."""
     data = load_json(path)
     cfg = data.get("config", data)
@@ -36,11 +39,21 @@ def load_nodes(path: str) -> dict[str, tuple[str, int]]:
     return out
 
 def load_topo(path: str) -> dict:
-    """Load topology adjacency dict; accepts {"type":"topo","config":{...}} or just {...}."""
+    """Load topology adjacency dict; accepts {"type":"topo"/"topology","config":{...}} or just {...}.
+    Supports values as dict of costs or list of neighbor ids (assumes cost=1)."""
     data = load_json(path)
-    if isinstance(data, dict) and "config" in data and data.get("type") in (None, "topo"):
-        return data["config"]
-    return data
+    cfg = data.get("config", data)
+    # if values are lists, convert to dict with unit cost
+    topo_out = {}
+    for k, v in cfg.items():
+        if isinstance(v, dict):
+            topo_out[str(k)] = {str(n): float(c) for n, c in v.items()}
+        elif isinstance(v, list):
+            topo_out[str(k)] = {str(n): 1.0 for n in v}
+        else:
+            # unknown, ignore
+            topo_out[str(k)] = {}
+    return topo_out
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Run a routing node (TCP or Redis).")
@@ -86,7 +99,15 @@ def main():
             print("[run_node] ERROR: --names es obligatorio cuando --transport redis", file=sys.stderr)
             sys.exit(2)
         try:
-            nodes_map = load_names(args.names)  # {"A": "redis.channel.A", ...}
+            original_names = load_names(args.names)
+            def looks_like_addr(s: str) -> bool:
+                return isinstance(s, str) and s.count('.') >= 2
+            if all(looks_like_addr(v) for v in original_names.values()):
+                nodes_map = {k: str(k) for k in original_names.keys()}
+                addresses_map = dict(original_names)
+            else:
+                nodes_map = dict(original_names)
+                addresses_map = dict(original_names)
         except Exception as e:
             print(f"[run_node] ERROR cargando names: {e}", file=sys.stderr)
             sys.exit(2)

@@ -7,12 +7,13 @@ except Exception:
 import threading
 import time
 import json
+import re
 from flooding import Flooding
 from dataclasses import dataclass
 from typing import Dict, Tuple
 from queue import Queue
 
-from messages import make_msg, parse_msg
+from messages import make_msg, parse_msg, normalize_type, payload_text
 from dijkstra import dijkstra, build_routing_table
 from lsr import LSR
 from dvr import DVR
@@ -26,27 +27,22 @@ class NeighborMetrics:
     last_seen: float = 0.0
 
 class RouterNode:
-    """
-    Fase 0/1
-    - Modos: dijkstra | flooding | lsr | dvr
-    - HELLO/ECHO con RTT y last_seen
-    - Dijkstra (estático) y LSR (dinámico, con flooding de LSP)
-    """
-
     def __init__(self, node_id: str, nodes_map: Dict[str, Tuple[str, int] | str],
                  topo: Dict[str, Dict[str, float]], mode: str = "dijkstra",
                  log_level: str = "INFO", hello_period: float = 5.0, dead_after: float = 10.0,
                  transport: str = "tcp",
                  redis_host: str | None = None,
                  redis_port: int | None = None,
-                 redis_pwd: str | None = None):
+                 redis_pwd: str | None = None,
+                 addresses_map: Dict[str, str] | None = None):
         assert mode in {"dijkstra", "flooding", "lsr", "dvr"}
         self.node_id = node_id
         self.mode = mode
         self.nodes_map = nodes_map
+        self.addresses_map = addresses_map or {}
         self.transport = (transport or "tcp").lower()
         if self.transport == "tcp":
-            self._host, self._port = nodes_map[node_id]
+            self._host, self._port = nodes_map[node_id]  # ("127.0.0.1", 5001)
         else:
             self._channel = str(nodes_map[node_id])
             self._redis_host = redis_host or "lab3.redesuvg.cloud"
@@ -87,6 +83,20 @@ class RouterNode:
         self.running = False
         self._lock = threading.Lock()
 
+        self.node_to_user: Dict[str, str] = {}
+        self.user_to_node: Dict[str, str] = {}
+        if self.transport == "redis":
+            for n, ch in self.nodes_map.items():
+                # Preferred username/address comes from addresses_map when provided
+                uname = self.addresses_map.get(str(n)) or self._derive_username(str(ch)) or str(n)
+                self.node_to_user[str(n)] = uname
+                # map canonical username -> node id
+                self.user_to_node.setdefault(uname, str(n))
+                # also map full channel name and case variants
+                self.user_to_node.setdefault(str(ch), str(n))
+                self.user_to_node.setdefault(str(n).lower(), str(n))
+                self.user_to_node.setdefault(str(n).upper(), str(n))
+
         # Servidor TCP local o Redis
         if self.transport == "tcp":
             self._server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -103,6 +113,46 @@ class RouterNode:
 
     def _now(self) -> float:
         return time.time()
+
+    # ========= Compat helpers =========
+    @staticmethod
+    def _derive_username(channel: str) -> str | None:
+        if channel.startswith("(") and "," in channel and "127.0.0.1" in channel:
+            return None
+        m = re.search(r'([A-Za-z0-9_+-]+)$', channel)
+        return m.group(1).lower() if m else None
+
+    def _id_to_user(self, node_id: str) -> str:
+        if self.transport != "redis":
+            return node_id
+        return self.node_to_user.get(node_id, node_id)
+
+    def _user_to_id(self, user_or_channel: str) -> str:
+        if self.transport != "redis":
+            return user_or_channel
+        return self.user_to_node.get(user_or_channel, user_or_channel)
+
+    def _normalize_outgoing_ids(self, msg: dict) -> dict:
+        if self.transport != "redis":
+            return msg
+        out = dict(msg)
+        out["from"] = self._id_to_user(str(out.get("from", self.node_id)))
+        to_val = out.get("to")
+        if isinstance(to_val, str) and to_val in self.node_to_user:
+            out["to"] = self._id_to_user(to_val)
+        return out
+
+    def _normalize_incoming_ids(self, msg: dict) -> dict:
+        if self.transport != "redis":
+            return msg
+        out = dict(msg)
+        frm = out.get("from")
+        to = out.get("to")
+        if isinstance(frm, str):
+            out["from"] = self._user_to_id(frm)
+        if isinstance(to, str):
+            out["to"] = self._user_to_id(to)
+        return out
 
     # ========= Logging =========
     def _log(self, level: str, msg: str, tag: str | None = None):
@@ -123,8 +173,12 @@ class RouterNode:
         self._update_last_seen(src)
         seq = msg.get("payload", {}).get("seq")
         ts = msg.get("payload", {}).get("ts")
-        echo = make_msg(self.mode, "echo", self.node_id, src, 4, {"seq": seq, "ts": ts})
-        self._send(src, echo)
+        echo = {
+            "proto": self.mode, "type": "echo",
+            "from": self.node_id, "to": src, "ttl": 4, "hops": 0,
+            "headers": [], "payload": {"seq": seq, "ts": ts}
+        }
+        self._send_msg(src, echo)
 
     def _on_echo(self, msg: dict) -> None:
         src = msg.get("from")
@@ -138,7 +192,7 @@ class RouterNode:
             m.rtt_ms = rtt_ms
             m.last_seen = self._now()
             self.nei_metrics[src] = m
-            self._log("INFO", f"ECHO {src} seq={seq} RTT={rtt_ms:.1f} ms", tag="echo")
+            self._log("INFO", f"ECHO {src} seq={seq} RTT={rtt_ms:.1f} ms", tag="ECHO")
             if self.mode == "dvr" and self.dvr:
                 self.dvr.changed = True
                 self.dvr.trigger_update()
@@ -148,7 +202,7 @@ class RouterNode:
         return m.rtt_ms if m and m.rtt_ms != float("inf") else 1.0
 
     # ========= Transporte local =========
-    def _send(self, target_node: str, wire: str):
+    def _send_wire(self, target_node: str, wire: str):
         if self.transport == "redis":
             channel = str(self.nodes_map[target_node])
             try:
@@ -169,13 +223,23 @@ class RouterNode:
                 time.sleep(0.05)
         self._log("WARN", f"Error enviando a {target_node}: {last_err}")
 
+    def _send_msg(self, target_node: str, msg: dict):
+        try:
+            wire_msg = self._normalize_outgoing_ids(msg)
+            wire = json.dumps(wire_msg, ensure_ascii=False)
+        except Exception as e:
+            self._log("WARN", f"No se pudo serializar msg: {e}", tag="SER")
+            return
+        self._send_wire(target_node, wire)
+
     # ========= Procesamiento de mensajes =========
     def _process_msg(self, msg: dict) -> None:
+        msg = self._normalize_incoming_ids(msg)
+
         try:
             to = msg.get("to")
             src = msg.get("from")
-            proto = msg.get("proto")
-            mtype = msg.get("type")
+            mtype = normalize_type(msg.get("type"))
             ttl = int(msg.get("ttl", 0))
         except Exception:
             return
@@ -183,7 +247,6 @@ class RouterNode:
         if ttl <= 0:
             return
 
-        # Cuenta hops
         try:
             msg["hops"] = int(msg.get("hops", 0)) + 1
         except Exception:
@@ -216,8 +279,12 @@ class RouterNode:
                 with self._lock:
                     nh_back = self.routing_table.get(src, {}).get("next_hop")
                 if nh_back:
-                    pong = make_msg(self.mode, "data", self.node_id, src, 12, {"kind": "pong", "ts": orig_ts})
-                    self._send(nh_back, pong)
+                    pong = {
+                        "proto": self.mode, "type": "data",
+                        "from": self.node_id, "to": src, "ttl": 12, "hops": 0,
+                        "headers": [], "payload": {"kind": "pong", "ts": orig_ts}
+                    }
+                    self._send_msg(nh_back, pong)
                     self._log("INFO", f"PONG → {src} via {nh_back}", tag="RECV")
                 else:
                     self._log("WARN", f"No next-hop para responder PONG a {src}", tag="RECV")
@@ -236,20 +303,15 @@ class RouterNode:
 
         with self._lock:
             nh = self.routing_table.get(to, {}).get("next_hop")
-        # Hotfix: si no hay ruta pero el destino es vecino directo, envía directo.
         if not nh and to in self.neighbors:
             nh = to
             self._log("DEBUG", f"Sin ruta en tabla; usando vecino directo {to}", tag="FWD")
         if not nh:
             self._log("WARN", f"Sin ruta a {to} ({self.mode}).", tag="FWD")
             return
-        # decrementa TTL antes de reenviar
+
         msg["ttl"] = ttl - 1
-        try:
-            wire = json.dumps(msg, ensure_ascii=False)
-        except Exception:
-            return
-        self._send(nh, wire)
+        self._send_msg(nh, msg)
         self._log("INFO", f"FWD {self.node_id} → {nh} (dst={to})", tag="FWD")
 
     # ========= Forwarding =========
@@ -273,7 +335,6 @@ class RouterNode:
                     time.sleep(0.2)
             return
 
-        # TCP branch
         while self.running:
             try:
                 self._server.settimeout(1.0)
@@ -307,17 +368,11 @@ class RouterNode:
                         self.routing_table = table
 
                 elif self.mode == "lsr" and self.lsr:
-                    # 1) Purga entradas viejas
                     self.lsr.expire()
-
-                    # 2) Anuncio periódico/por cambio
                     if self.lsr.should_advertise(self):
                         self.lsr.advertise(self)
-
-                    # 3) Recompute si LSDB cambió
                     if self.lsr.changed:
                         dyn_topo = self.lsr.build_topology()
-                        # Asegúrate de incluirte si aún no apareces (sin vecinos vivos)
                         dyn_topo.setdefault(self.node_id, {})
                         res = dijkstra(dyn_topo, self.node_id)
                         table = build_routing_table(res, self.node_id)
@@ -326,7 +381,6 @@ class RouterNode:
                         self.lsr.changed = False
 
                 elif self.mode == "dvr" and self.dvr:
-                    # Mantenimiento y recomputo
                     self.dvr.expire(self)
                     self.dvr.update_local_links(self)
 
@@ -336,7 +390,6 @@ class RouterNode:
                             self.routing_table = table
                         self._dump_table("Tabla DVR actualizada")
 
-                    # Anunciar si corresponde
                     if self.dvr.should_advertise():
                         self.dvr.advertise(self)
 
@@ -352,8 +405,12 @@ class RouterNode:
                 seq = self._seq_next()
                 ts = self._now()
                 self._hello_out[(n, seq)] = ts
-                hello = make_msg(self.mode, "hello", self.node_id, n, 4, {"seq": seq, "ts": ts})
-                self._send(n, hello)
+                hello = {
+                    "proto": self.mode, "type": "hello",
+                    "from": self.node_id, "to": n, "ttl": 4, "hops": 0,
+                    "headers": [], "payload": {"seq": seq, "ts": ts}
+                }
+                self._send_msg(n, hello)
             time.sleep(self.hello_period)
 
     # ========= Ciclo de vida =========
@@ -366,7 +423,7 @@ class RouterNode:
         self._t_rte.start()
         self._t_hlo.start()
         addr = f"TCP {self._host}:{self._port}" if self.transport == 'tcp' else f"Redis ch={self._channel}"
-        self._log("INFO", f"Iniciado ({self.mode}) {addr} vecinos={sorted(self.neighbors)}", tag="start")
+        self._log("INFO", f"Iniciado ({self.mode}) {addr} vecinos={sorted(self.neighbors)}", tag="START")
 
     def stop(self):
         self.running = False
@@ -385,6 +442,6 @@ class RouterNode:
         with self._lock:
             rt = dict(self.routing_table)
         if title:
-            self._log("INFO", title, tag="rte")
+            self._log("INFO", title, tag="RTE")
         for dst, row in sorted(rt.items()):
-            self._log("INFO", f"dst={dst} nh={row.get('next_hop')} cost={row.get('cost')}", tag="rte")
+            self._log("INFO", f"dst={dst} nh={row.get('next_hop')} cost={row.get('cost')}", tag="RTE")

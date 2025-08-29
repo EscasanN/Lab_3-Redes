@@ -4,7 +4,7 @@ from typing import Any, Dict
 import json
 
 PROTO_VALUES = {"dijkstra", "flooding", "lsr", "dvr"}
-TYPE_VALUES = {"data", "hello", "echo", "info"}
+TYPE_VALUES = {"data", "message", "hello", "echo", "info"}
 
 def make_msg(
     proto: str,
@@ -49,3 +49,19 @@ def parse_msg(data: bytes) -> dict:
     if isinstance(data, dict):
         return data
     raise TypeError("parse_msg espera bytes/str/dict")
+
+
+def normalize_type(t: str) -> str:
+    if not isinstance(t, str):
+        return "data"
+    t = t.lower()
+    return "data" if t == "message" else t
+
+
+def payload_text(payload: dict) -> str | None:
+    try:
+        if isinstance(payload, dict):
+            return payload.get("text") or payload.get("data")
+    except Exception:
+        pass
+    return None
