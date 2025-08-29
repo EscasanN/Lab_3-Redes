@@ -1,12 +1,16 @@
-# dvr.py — DV (opcional). Anuncia 'info' con headers[0].id/ts + table_version
+# dvr.py
 from __future__ import annotations
 import time
 from typing import Dict, Optional, Set
-from messages import make_wire
+from messages import make_msg
 
 INF = 1e12
 
 class DVR:
+    """
+    Distance-Vector con Split Horizon + Poisoned Reverse, triggered updates y hold-down opcional.
+    """
+
     def __init__(self, me: str, use_static_costs: bool = True, poisoned_reverse: bool = True,
                  hold_down_secs: float | None = 8.0, change_threshold: float = 1e-6):
         self.me = me
@@ -14,21 +18,32 @@ class DVR:
         self.poisoned_reverse = poisoned_reverse
         self.hold_down_secs = hold_down_secs
         self.change_threshold = change_threshold
+
+        # Estado local
         self.dv_self: Dict[str, float] = {me: 0.0}
         self.next_hop: Dict[str, Optional[str]] = {me: me}
+
+        # DV recibidos por vecino
         self.dv_from: Dict[str, Dict[str, float]] = {}
         self.dv_from_ts: Dict[str, float] = {}
+
+        # control
         self.seq = 0
         self.last_adv = 0.0
         self.changed = True
         self._triggered = False
-        self.hold_until: Dict[str, float] = {}
+        self._last_change_time = 0.0
+        self.hold_until: Dict[str, float] = {}  
 
-    def _now(self) -> float: return time.time()
+    # ======= util =======
+    def _now(self) -> float:
+        return time.time()
 
     def _alive_neighbors(self, node, dead_after: float | None = None) -> Set[str]:
-        if dead_after is None: dead_after = getattr(node, "dead_after", 10.0)
-        now = self._now(); alive = set()
+        if dead_after is None:
+            dead_after = getattr(node, "dead_after", 10.0)
+        now = self._now()
+        alive = set()
         for n in list(node.neighbors):
             met = node.nei_metrics.get(n)
             if met and met.last_seen > 0 and (now - met.last_seen) <= dead_after:
@@ -38,7 +53,7 @@ class DVR:
     def _cost_to_neighbor(self, node, n: str) -> float:
         if self.use_static_costs:
             return float(node.topology.get(node.node_id, {}).get(n, 1.0))
-        return float(node.cost_to(n))
+        return float(node.cost_to(n))  # RTT o 1.0 si no medido
 
     def _destinations(self, node) -> Set[str]:
         dests = set(self.dv_self.keys()) | set(node.neighbors) | {self.me}
@@ -47,85 +62,115 @@ class DVR:
         return dests
 
     def trigger_update(self) -> None:
+        """Fuerza un anuncio rápido (triggered update) respetando un pequeño backoff en should_advertise()."""
         self._triggered = True
 
+    # ======= núcleo Bellman-Ford =======
     def recompute(self, node) -> None:
         now = self._now()
         alive = self._alive_neighbors(node)
         dests = self._destinations(node)
+
         new_dv: Dict[str, float] = {self.me: 0.0}
         new_nh: Dict[str, Optional[str]] = {self.me: self.me}
 
         for dst in dests:
-            if dst == self.me: continue
-            best_cost = INF; best_nh: Optional[str] = None
+            if dst == self.me:
+                continue
+
+            best_cost = INF
+            best_nh: Optional[str] = None
+
+            # enlace directo
             if dst in alive:
                 cdir = self._cost_to_neighbor(node, dst)
-                if cdir < best_cost: best_cost, best_nh = cdir, dst
+                if cdir < best_cost:
+                    best_cost, best_nh = cdir, dst
+
+            # vía vecinos
             for n in alive:
                 via = self._cost_to_neighbor(node, n) + self.dv_from.get(n, {}).get(dst, INF)
-                if via < best_cost: best_cost, best_nh = via, n
+                if via < best_cost:
+                    best_cost, best_nh = via, n
 
-            prev = self.dv_self.get(dst, INF)
+            prev_cost = self.dv_self.get(dst, INF)
             if self.hold_down_secs and dst in self.hold_until and now < self.hold_until[dst]:
-                if best_cost < prev:
-                    best_cost, best_nh = prev, self.next_hop.get(dst)
+                if best_cost < prev_cost:  # mejora durante hold-down
+                    best_cost, best_nh = prev_cost, self.next_hop.get(dst)
 
             new_dv[dst] = best_cost
             new_nh[dst] = best_nh
 
+        # detectar cambios 
         changed = False
-        for d in (set(new_dv) | set(self.dv_self)):
-            old = self.dv_self.get(d, INF); new = new_dv.get(d, INF)
+        all_dsts = set(new_dv.keys()) | set(self.dv_self.keys())
+        for d in all_dsts:
+            old = self.dv_self.get(d, INF)
+            new = new_dv.get(d, INF)
             if abs(old - new) > self.change_threshold or self.next_hop.get(d) != new_nh.get(d):
                 changed = True
                 if self.hold_down_secs and (new > old + 1.0 or (old < INF/2 and new >= INF/2)):
                     self.hold_until[d] = self._now() + float(self.hold_down_secs)
 
-        self.dv_self = new_dv; self.next_hop = new_nh
+        self.dv_self = new_dv
+        self.next_hop = new_nh
         self.changed = changed
-        if changed: self._triggered = True
+        if changed:
+            self._last_change_time = now
+            self._triggered = True  
 
+    # ======= anuncio =======
     def should_advertise(self, min_interval: float = 1.0, refresh_every: float = 8.0) -> bool:
         now = self._now()
-        if self.seq == 0: return True
-        if self._triggered and (now - self.last_adv) >= 0.2: return True
+        if self.seq == 0:
+            return True
+        if self._triggered and (now - self.last_adv) >= 0.2:
+            return True
         if (now - self.last_adv) >= min_interval and (self.changed or (now - self.last_adv) >= refresh_every):
             return True
         return False
 
     def _vector_for_neighbor(self, nei: str) -> Dict[str, float]:
-        if not self.poisoned_reverse: return dict(self.dv_self)
+        if not self.poisoned_reverse:
+            return dict(self.dv_self)
         vec = {}
         for dst, cost in self.dv_self.items():
             nh = self.next_hop.get(dst)
-            vec[dst] = INF if (nh == nei and dst != nei) else cost
+            if nh == nei and dst != nei:
+                vec[dst] = INF  # poison
+            else:
+                vec[dst] = cost
         return vec
 
     def advertise(self, node) -> None:
         alive = self._alive_neighbors(node)
-        if not alive: return
+        if not alive:
+            return
         self.seq += 1
         for nei in alive:
             dv_vec = self._vector_for_neighbor(nei)
-            wire = make_wire(
-                mtype="info",
-                from_wire=node._to_wire_id(self.me),
-                to_wire=node._to_wire_id(nei),
-                hops=3,
-                payload={"routing_table": [{"dest": d, "next_hop": self.next_hop.get(d), "cost": float(c)}
-                                           for d, c in self.dv_self.items()]},
-                header_extra={"table_version": self.seq}
-            )
+            wire = make_msg("dvr", "info", self.me, nei, 8, {"seq": self.seq, "dv": dv_vec})
             node._send(nei, wire)
         self.last_adv = self._now()
         self._triggered = False
-        self.changed = False
+        self.changed = False  
 
+    # ======= recepción =======
     def on_receive_info(self, node, msg: dict) -> None:
-        # No interoperamos DV completo aquí (opcional). Solo aceptamos el paquete.
-        pass
+        src = msg.get("from")
+        if not src:
+            return
+        if src not in node.neighbors:
+            return
+        payload = msg.get("payload") or {}
+        dv_vec = payload.get("dv") or {}
+        # guarda DV del vecino y marca ts
+        self.dv_from[src] = {k: float(v) for k, v in dv_vec.items()}
+        self.dv_from_ts[src] = self._now()
+        # recomputa y dispara triggered update
+        self.recompute(node)
 
+    # ======= mantenimiento =======
     def expire(self, node, dv_max_age: float = 20.0) -> None:
         now = self._now()
         removed = False
@@ -140,6 +185,7 @@ class DVR:
     def update_local_links(self, node) -> None:
         self.recompute(node)
 
+    # ======= tabla de ruteo =======
     def build_routing_table(self) -> Dict[str, Dict[str, float | str | None]]:
         table: Dict[str, Dict[str, float | str | None]] = {}
         for dst, cost in self.dv_self.items():
