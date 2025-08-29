@@ -109,8 +109,6 @@ class RouterNode:
             return self._inv_names.get(str(wid), str(wid))
         return str(wid)
 
-=======
->>>>>>> parent of 57f9c98 (.)
     # ========= Logging =========
     def _log(self, level: str, msg: str, tag: str | None = None):
         lvl = LOG_LEVELS.get(level.upper(), 2)
@@ -260,7 +258,6 @@ class RouterNode:
         if not nh:
             self._log("WARN", f"Sin ruta a {to} ({self.mode}).", tag="FWD")
             return
-<<<<<<< HEAD
 
         # Decrementa hops y forward sin cambiar id
         msg["hops"] = hops - 1
