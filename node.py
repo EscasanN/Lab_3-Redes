@@ -1,5 +1,10 @@
+# node.py — RouterNode con formato Mathew, HELLO/ACK y soporte LSP
 from __future__ import annotations
-import socket
+import socket, threading, time, json
+from dataclasses import dataclass
+from typing import Dict, Tuple, Optional
+from queue import Queue
+
 try:
     import redis
 except Exception:
@@ -9,7 +14,7 @@ from messages import normalize_incoming, make_wire, dumps, get_header, set_heade
 from flooding import Flooding
 from dijkstra import dijkstra, build_routing_table
 from lsr import LSR
-from dvr import DVR
+from dvr import DVR  # opcional
 
 BUFFER_SIZE = 65536
 LOG_LEVELS = {"ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3}
@@ -34,16 +39,14 @@ class RouterNode:
                  transport: str = "tcp",
                  redis_host: str | None = None,
                  redis_port: int | None = None,
-                 redis_pwd: str | None = None,
-                 addresses_map: Dict[str, str] | None = None):
+                 redis_pwd: str | None = None):
         assert mode in {"dijkstra", "flooding", "lsr", "dvr"}
         self.node_id = node_id
         self.mode = mode
         self.nodes_map = nodes_map
-        self.addresses_map = addresses_map or {}
         self.transport = (transport or "tcp").lower()
         if self.transport == "tcp":
-            self._host, self._port = nodes_map[node_id]  # ("127.0.0.1", 5001)
+            self._host, self._port = nodes_map[node_id]
         else:
             self._channel = str(nodes_map[node_id])
             self._redis_host = redis_host or "lab3.redesuvg.cloud"
@@ -54,6 +57,10 @@ class RouterNode:
             self._redis = redis.Redis(host=self._redis_host, port=self._redis_port, password=self._redis_pwd)
             self._pubsub = self._redis.pubsub()
             self._pubsub.subscribe(self._channel)
+            self._inv_names = {str(v): str(k) for k, v in self.nodes_map.items()}
+        # TCP no necesita map inverso
+        if self.transport == "tcp":
+            self._inv_names = {}
 
         # logging/timers
         self.log_level = log_level.upper()
@@ -61,25 +68,23 @@ class RouterNode:
         self.hello_period = float(hello_period)
         self.dead_after = float(dead_after)
 
-        # Flooding: se usa en modo 'flooding' y también para propagar LSP en 'lsr'
-        self.flood = Flooding() if mode in {"flooding", "lsr"} else None
+        # Flooding (se usa en modo flooding y para difundir LSP/control)
+        self.flood = Flooding()
 
-        # Topología/vecinos 
+        # Topología/vecinos
         self.topology = topo
         self.neighbors = set(topo.get(node_id, {}).keys())
 
         # Estado
         self.routing_table: Dict[str, Dict[str, float | str | None]] = {}
         self.info_in: Queue = Queue()
-        self.seen = set()
         self.nei_metrics: Dict[str, NeighborMetrics] = {n: NeighborMetrics() for n in self.neighbors}
-        self._hello_out: Dict[Tuple[str, int], float] = {}  
+        self._hello_out: Dict[str, float] = {}  # id_hello -> ts_enviado
         self._seq = 0
 
-        # LSR
+        # protocolos
         self.lsr = LSR(self.node_id) if mode == "lsr" else None
-        # DVR
-        self.dvr = DVR(self.node_id, use_static_costs=True, poisoned_reverse=True) if mode == "dvr" else None
+        self.dvr = DVR(self.node_id) if mode == "dvr" else None
 
         self.running = False
         self._lock = threading.Lock()
@@ -117,16 +122,13 @@ class RouterNode:
             print(f"{prefix} {msg}")
 
     def _update_last_seen(self, n: str) -> None:
-        m = self.nei_metrics.get(n)
-        if not m:
-            m = NeighborMetrics()
-            self.nei_metrics[n] = m
+        m = self.nei_metrics.get(n) or NeighborMetrics()
         m.last_seen = self._now()
         self.nei_metrics[n] = m
 
     def cost_to(self, neighbor: str) -> float:
         m = self.nei_metrics.get(neighbor)
-        return m.rtt_ms if m and m.rtt_ms != float("inf") else 1.0
+        return m.rtt_ms if (m and m.rtt_ms != float("inf")) else 1.0
 
     # ========= Transporte =========
     def _send(self, target_node: str, wire: str):
@@ -135,10 +137,9 @@ class RouterNode:
             channel = str(self.nodes_map[target_node])
             try:
                 self._redis.publish(channel, wire)
-                return
             except Exception as e:
                 self._log("WARN", f"Redis publish error a {channel}: {e}")
-                return
+            return
         host, port = self.nodes_map[target_node]
         try:
             with socket.create_connection((host, port), timeout=1.2) as s:
@@ -217,8 +218,7 @@ class RouterNode:
             hops = int(msg.get("hops", 0))
         except Exception:
             return
-
-        if ttl <= 0:
+        if hops <= 0:
             return
 
         to = self._from_wire_id(to_wire) if to_wire != "*" else "*"
@@ -243,18 +243,17 @@ class RouterNode:
                     rtt_ms = (self._now() - float(payload.get("ts", self._now()))) * 1000.0
                     self._log("INFO", f"PONG from {src} RTT={rtt_ms:.1f} ms", tag="RECV")
                 except Exception:
-                    self._log("WARN", f"PONG from {src} (ts inválido)", tag="RECV")
+                    self._log("WARN", f"PONG from {src} ts inválido", tag="RECV")
                 return
-
             self._log("INFO", f"DATA de {src}: {payload}", tag="RECV")
             return
 
+        # Forwarding (no soy destino)
         with self._lock:
             nh = self.routing_table.get(to, {}).get("next_hop")
-        # Hotfix: si no hay ruta pero el destino es vecino directo, envía directo.
         if not nh and to in self.neighbors:
             nh = to
-            self._log("DEBUG", f"Sin ruta en tabla; usando vecino directo {to}", tag="FWD")
+            self._log("DEBUG", f"Sin ruta; usando vecino directo {to}", tag="FWD")
         if not nh:
             self._log("WARN", f"Sin ruta a {to} ({self.mode}).", tag="FWD")
             return
@@ -264,19 +263,17 @@ class RouterNode:
         self._send(nh, dumps(msg))
         self._log("INFO", f"FWD {self.node_id} → {nh} (dst={to})", tag="FWD")
 
-    # ========= Forwarding =========
+    # ========= Loops =========
     def forwarding_loop(self):
         if self.transport == "redis":
             while self.running:
                 try:
                     for message in self._pubsub.listen():
-                        if not self.running:
-                            break
-                        if message.get('type') != 'message':
-                            continue
-                        data = message.get('data')
+                        if not self.running: break
+                        if message.get("type") != "message": continue
+                        data = message.get("data")
                         try:
-                            msg = parse_msg(data)
+                            msg = normalize_incoming(data)
                         except Exception:
                             continue
                         self._process_msg(msg)
@@ -294,17 +291,15 @@ class RouterNode:
                 continue
             except OSError:
                 break
-
             with conn:
                 try:
                     data = conn.recv(BUFFER_SIZE)
                 except ConnectionResetError:
                     continue
-
                 if not data:
                     continue
                 try:
-                    msg = parse_msg(data)
+                    msg = normalize_incoming(data)
                 except Exception:
                     continue
                 self._process_msg(msg)
@@ -315,35 +310,24 @@ class RouterNode:
                 if self.mode == "dijkstra":
                     res = dijkstra(self.topology, self.node_id)
                     table = build_routing_table(res, self.node_id)
-                    with self._lock:
-                        self.routing_table = table
+                    with self._lock: self.routing_table = table
 
                 elif self.mode == "lsr" and self.lsr:
-                    # 1) Purga entradas viejas
                     self.lsr.expire()
-
-                    # 2) Anuncio periódico/por cambio
                     if self.lsr.should_advertise(self):
                         self.lsr.advertise(self)
-
-                    # 3) Recompute si LSDB cambió
                     if self.lsr.changed:
                         dyn_topo = self.lsr.build_topology()
-                        # Asegúrate de incluirte si aún no apareces (sin vecinos vivos)
                         dyn_topo.setdefault(self.node_id, {})
                         res = dijkstra(dyn_topo, self.node_id)
-                        table = build_routing_table(res, self.node_id)
                         with self._lock:
-                            self.routing_table = table
+                            self.routing_table = build_routing_table(res, self.node_id)
                         self.lsr.changed = False
 
                 elif self.mode == "dvr" and self.dvr:
-                    # Mantenimiento y recomputo
                     self.dvr.expire(self)
                     self.dvr.update_local_links(self)
-
                     if self.dvr.changed:
-                        table = self.dvr.build_routing_table()
                         with self._lock:
                             self.routing_table = self.dvr.build_routing_table()
                     if self.dvr.should_advertise():
@@ -354,7 +338,6 @@ class RouterNode:
                 self._log("ERROR", f"Error en routing_loop: {e}", tag="loop")
                 time.sleep(1.0)
 
-    # ========= HELLO periódico =========
     def hello_loop(self):
         while self.running:
             for n in list(self.neighbors):
@@ -374,18 +357,15 @@ class RouterNode:
     def stop(self):
         self.running = False
         try:
-            if self._server:
-                self._server.close()
+            if self._server: self._server.close()
         except Exception:
             pass
-        if self.transport == 'redis':
-            try:
-                self._pubsub.unsubscribe()
-            except Exception:
-                pass
+        if self.transport == "redis":
+            try: self._pubsub.unsubscribe()
+            except Exception: pass
 
     def _dump_table(self, title: str = ""):
         with self._lock: rt = dict(self.routing_table)
         if title: self._log("INFO", title, tag="rte")
         for dst, row in sorted(rt.items()):
-            self._log("INFO", f"dst={dst} nh={row.get('next_hop')} cost={row.get('cost')}", tag="RTE")
+            self._log("INFO", f"dst={dst} nh={row.get('next_hop')} cost={row.get('cost')}", tag="rte")
