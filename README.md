@@ -46,12 +46,12 @@ Cada nodo se levanta individualmente, usando **Redis pub/sub** para comunicarse.
 
 ### Ejemplo: iniciar nodo A en DVR
 ```bash
-python run_node.py --me A --mode dvr --transport redis   --names config/names-sample.txt   --topo config/topo-sample.txt   --redis-host lab3.redesuvg.cloud --redis-port 6379 --redis-pwd UVGRedis2025 --log DEBUG
+python run_node.py --me A --mode flooding --transport redis --names config/names.json --topo config/topo.json
 ```
 
 ### Archivos de configuración (fase 2)
-- `config/names-*.txt`: mapea nodos a **canales Redis** (ej. `"A": "sec10.grupo3.nelson"`)  
-- `config/topo-*.txt`: define vecinos y costos (igual que en fase 1)
+- `config/names.json`: mapea nodos a **canales Redis** (ej. `"A": "sec10.grupo3.nelson"`)  
+- `config/topojson`: define vecinos y costos (igual que en fase 1)
 
 El nuevo `run_node.py` selecciona:
 - `--nodes` si usas `--transport tcp`
@@ -62,51 +62,7 @@ El nuevo `run_node.py` selecciona:
 ## Envío de mensajes con `send_cli.py`
 Funciona tanto en TCP como en Redis.
 
-### Interactivo
-```bash
-python send_cli.py --transport redis   --names config/names-sample.txt --topo config/topo-sample.txt --nodes config/nodes.json
-```
-Te permite elegir:
-- **DATA/MESSAGE** → enviar texto
-- **DATA/PING** → medir RTT
-- **INFO** → difundir info/tablas
-
 ### Directo
 ```bash
-# DATA A->B
-python send_cli.py --transport redis   --names config/names-sample.txt --topo config/topo-sample.txt --nodes config/nodes.json   --mode dvr --entry A --src A --dst B --ttl 12 --text "hola"
-
-# PING A->B
-python send_cli.py --transport redis   --names config/names-sample.txt --topo config/topo-sample.txt --nodes config/nodes.json   --mode dvr --entry A --src A --dst B --ttl 8 --ping
-
-# INFO broadcast
-python send_cli.py --transport redis   --names config/names-sample.txt --topo config/topo-sample.txt --nodes config/nodes.json   --mode lsr --entry A --src A --dst * --ttl 8 --info "tabla"
+python send_cli.py --transport redis --names config/names.json --entry A --src A --dst B --mode flooding --ttl 8 --text "hola"
 ```
-
----
-
-## Formato de mensaje (JSON)
-Ejemplo enviado por Redis/TCP:
-```json
-{
-  "proto": "dvr",
-  "type": "data",
-  "from": "A",
-  "to": "B",
-  "ttl": 12,
-  "hops": 0,
-  "headers": [],
-  "payload": { "text": "hola" }
-}
-```
-- `hello/echo`: usados para medir RTT con vecinos.  
-- `data`: mensajes de usuario (`ping/pong` o texto).  
-- `info`: anuncios de estado/rutas (flooding en LSR, vectores en DVR).  
-
----
-
-## Notas
-- `dijkstra`: usa topología estática.  
-- `lsr`: flooding de LSP + recomputo con Dijkstra.  
-- `dvr`: vectores con split horizon + poisoned reverse.  
-- `flooding`: reenvía DATA/INFO sin cálculo de rutas.  

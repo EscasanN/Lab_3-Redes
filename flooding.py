@@ -1,16 +1,15 @@
-# flooding.py — Flooding con hops y deduplicación por header.id
-import time
+from __future__ import annotations
 from typing import Dict, Set
 from messages import get_header, set_header, ensure_header_id_ts, dumps
 
 class Flooding:
-    """Inundación con deduplicación por headers[0].id y supresión por 'prev'."""
+    """Simple flooding with dedup (headers[0].id) and suppression using 'prev' header."""
     def __init__(self):
         self.seen: Set[str] = set()
 
     def _msg_id(self, msg: Dict) -> str:
         ensure_header_id_ts(msg)
-        return get_header(msg, "id")
+        return str(get_header(msg, "id"))
 
     def _flood(self, node, msg: Dict) -> None:
         try:
@@ -21,35 +20,34 @@ class Flooding:
             return
 
         prev = get_header(msg, "prev")
-        # Clona y reduce hops
         fwd = dict(msg)
         fwd["hops"] = hops - 1
         set_header(fwd, "prev", node.node_id)
-
-        now = time.time()
-        DEAD = getattr(node, "dead_after", 10.0)
         wire = dumps(fwd)
 
         for n in list(node.neighbors):
             if n == prev or fwd["hops"] <= 0:
                 continue
-            met = node.nei_metrics.get(n)
-            if met and met.last_seen > 0 and (now - met.last_seen) > DEAD:
+            if not node.is_neighbor_active(n):
+                # Skip inactive neighbors (if node tracks health)
                 continue
             node._send(n, wire)
-            node._log("INFO", f"FWD(flooding) → {n} (dst={msg.get('to')}, id={self._msg_id(msg)})", tag="FWD")
+            node._log("INFO", f"FWD(flood) → {n} (dst={msg.get('to')}, id={self._msg_id(msg)})", tag="FWD")
 
-    # ---- entradas con deduplicación ----
+    # ---- entries with dedup ----
     def handle_message(self, node, msg: Dict) -> None:
         mid = self._msg_id(msg)
         if mid in self.seen:
             return
         self.seen.add(mid)
 
-        # ¿soy destino?
-        if msg.get("to") == node._to_wire_id(node.node_id):
-            node._log("INFO", f"DATA para mí de {msg.get('from')}: {msg.get('payload')}", tag="RECV")
-            return
+        # deliver locally?
+        if msg.get("to") in (node._to_wire_id(node.node_id), node.node_id, "*"):
+            node._log("INFO", f"DATA for me from {msg.get('from')}: {msg.get('payload')}", tag="RECV")
+            node.on_data_local(msg)
+            # For broadcast, also continue flooding
+            if msg.get("to") != "*":
+                return
         self._flood(node, msg)
 
     def handle_control(self, node, msg: Dict) -> None:
