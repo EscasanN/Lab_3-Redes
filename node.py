@@ -13,6 +13,7 @@ from messages import normalize_incoming, make_wire, dumps, get_header, set_heade
 from flooding import Flooding
 from lsr import LSR
 from dvr import DVR
+from dijkstra import dijkstra, build_routing_table
 
 LOG_LEVELS = {"ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3}
 
@@ -22,11 +23,6 @@ class NeighborMetrics:
     last_seen: float = 0.0
 
 class RouterNode:
-    """
-    Modes: dijkstra | flooding | lsr | dvr (we implement flooding + lsr + minimal dvr)
-    Transport: tcp | redis
-    Messaging: Mathew format (type/from/to/hops/headers/payload). 
-    """
     def __init__(self, node_id: str, nodes_map: Dict[str, Tuple[str, int] | str],
                  topo: Dict[str, Dict[str, float]], mode: str = "flooding",
                  log_level: str = "INFO",
@@ -182,6 +178,12 @@ class RouterNode:
 
     # deliver local data hook
     def on_data_local(self, msg: dict) -> None:
+        # If the message is for me, show it
+        try:
+            if msg.get('type') == 'message' and msg.get('to') in (self._to_wire_id(self.node_id), self.node_id):
+                self._log('INFO', f"DATA for me from {msg.get('from')}: {msg.get('payload')}", tag='RECV')
+        except Exception:
+            pass
         # If it's an echo request targeted to me, bounce back
         if msg.get("type") == "echo" and msg.get("to") in (self._to_wire_id(self.node_id), self.node_id):
             reply = {
@@ -220,12 +222,37 @@ class RouterNode:
                 self.lsr.on_receive_lsp(self, msg)
             self.flood.handle_control(self, msg)
             return
+
         if mtype == "info":
+            alg = str(get_header(msg, "alg", "")).lower()
+            if self.mode == "lsr" and self.lsr and alg in ("lsr","lsp","dijkstra"):
+                try:
+                    self.lsr.on_receive_lsp(self, msg)
+                except Exception as e:
+                    self._log("WARN", f"LSR on_receive_lsp error: {e}", tag="LSR")
+                self.flood.handle_control(self, msg)
+                return
+            if self.mode == "dvr" and self.dvr and alg in ("dvr",):
+                try:
+                    self.dvr.on_receive_info(self, msg)
+                except Exception as e:
+                    self._log("WARN", f"DVR on_receive_info error: {e}", tag="DVR")
+                self.flood.handle_control(self, msg)
+                return
             self.flood.handle_control(self, msg)
             return
 
+
         # data (message)
         if mtype == "message":
+            alg = str(get_header(msg, "alg", self.mode)).lower()
+            if self.mode == "lsr" and alg in ("lsr", "dijkstra"):
+                self._forward_lsr(msg)
+                return
+            if self.mode == "dvr" and alg in ("dvr",):
+                self._forward_dvr(msg)
+                return
+            # default: flooding
             self.flood.handle_message(self, msg)
             return
 
@@ -287,7 +314,8 @@ class RouterNode:
                     if self.lsr.changed:
                         dyn_topo = self.lsr.build_topology()
                         dyn_topo.setdefault(self.node_id, {})
-                        # No full dijkstra here; flooding handles forwarding
+                        res = dijkstra(dyn_topo, self.node_id)
+                        self.routing_table = build_routing_table(res, self.node_id)
                         self.lsr.changed = False
                 # DVR stub updates
                 if self.mode == "dvr" and self.dvr:
@@ -327,3 +355,9 @@ class RouterNode:
                 self._pubsub.unsubscribe()
             except Exception:
                 pass
+
+    def forward_lsr(self, msg: dict) -> None:
+        return self._forward_lsr(msg)
+
+    def forward_dvr(self, msg: dict) -> None:
+        return self._forward_dvr(msg)
