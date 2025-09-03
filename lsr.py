@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import time
 from typing import Dict, List, Any
 from messages import make_wire, get_header
@@ -41,8 +42,17 @@ class LSR:
         self.last_adv = self._now()
         self.changed = True
 
-        payload = {"node": self.me, "neighbors": neighbors, "sequence": self.seq, "costs": costs}
-        wire = make_wire("lsp", node._to_wire_id(self.me), "*", 16, payload, {"seq": self.seq, "origin": self.me})
+        payload = None
+        # Wire-level info with top-level fields per protocol
+        wire = json.dumps({
+            "type": "info",
+            "from": node._to_wire_id(self.me),
+            "to": "*",
+            "hops": 16,
+            "headers": {"alg": "lsr"},
+            "seq_num": int(self.seq),
+            "neighbors": [node._to_wire_id(n) for n in neighbors]
+        }, ensure_ascii=False)
         node._broadcast_wire(wire)
 
     def on_receive_lsp(self, node, msg: Dict) -> None:

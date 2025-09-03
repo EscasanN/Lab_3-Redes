@@ -65,6 +65,7 @@ class RouterNode:
 
         # state
         self.neighbors: Set[str] = set(self.topology.get(self.node_id, {}).keys())
+        self.neighbors.discard(self.node_id)
         self.nei_metrics: Dict[str, NeighborMetrics] = {}
         self.routing_table: Dict[str, Dict[str, Any]] = {}
         self._hello_out: Dict[str, float] = {}

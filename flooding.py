@@ -28,6 +28,8 @@ class Flooding:
         for n in list(node.neighbors):
             if n == prev or fwd["hops"] <= 0:
                 continue
+            if n == node.node_id:
+                continue
             if not node.is_neighbor_active(n):
                 # Skip inactive neighbors (if node tracks health)
                 continue

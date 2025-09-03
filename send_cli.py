@@ -62,8 +62,13 @@ def main():
     tr = Transport(args.transport, nodes_path=args.nodes, names_path=args.names,
                    redis_host=args.redis_host, redis_port=args.redis_port, redis_pwd=args.redis_pwd)
 
-    payload = {'text': args.text}
-    wire = make_msg(args.mode, 'data', args.src, args.dst, args.ttl, payload)
+    payload = args.text
+    src_wire = args.src
+    dst_wire = args.dst
+    if args.transport == 'redis':
+        src_wire = tr.channels.get(args.src, args.src)
+        dst_wire = tr.channels.get(args.dst, args.dst)
+    wire = make_msg(args.mode, 'data', src_wire, dst_wire, args.ttl, payload)
     if args.transport == 'tcp':
         tr.send_tcp(args.entry, wire)
     else:

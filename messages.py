@@ -38,7 +38,7 @@ def ensure_header_id_ts(msg: Dict) -> None:
         hd["id"] = str(uuid.uuid4()); changed = True
     if "ts" not in hd:
         hd["ts"] = now_ms(); changed = True
-    if changed or not isinstance(hs, list):
+    if changed or not isinstance(hs, dict):
         msg["headers"] = _headers_from_dict(hd)
 
 def parse_any(data: Union[bytes, str, Dict]) -> Dict:
@@ -101,7 +101,7 @@ def make_wire(mtype: str,
         "from": from_wire,
         "to": to_wire,
         "hops": int(hops),
-        "headers": [new_header(header_extra)],
+        "headers": new_header(header_extra),
         "payload": payload
     }
     return json.dumps(msg, ensure_ascii=False)
